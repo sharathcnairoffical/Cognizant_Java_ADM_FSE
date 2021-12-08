@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>
+            Web storage
+        </title>
+    </head>
+    <body>
+        <script >
+        if(sessionStorage.hits){
+            sessionStorage.hits=Number(sessionStorage.hits)+1;
+        }
+        else{
+            sessionStorage.hits=1;
+        }
+        document.write("Total hits:"+sessionStorage.hits);
+        </script>
+        <button onclick()="window.open("http://www.google.com","_blank"");">open gmail</button>
+    </body>
+</html>
