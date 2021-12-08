@@ -1,0 +1,334 @@
+1) inside for loop, you forgot to add the "sa" into the array list. 	(final score 65. you could have passed)
+	public static List<StudentAdmission> buildStudentAdmissionsList(List<String> studentAdmissionRecords) {
+		List<StudentAdmission> studentAdmissionList = new ArrayList<StudentAdmission>();
+		
+		//Code here
+		for(String line:studentAdmissionRecords)
+		{
+		    String[] arr=line.split(",");
+		    String admissionId=arr[0];
+		    String studentCode=arr[1];
+		    Date dateOfCounseling=ApplicationUtil.convertStringToDate(arr[2]);
+		    String departmentName=arr[3];
+		    Date dateOfAdmission=ApplicationUtil.convertStringToDate(arr[4]);
+		    String preferCollegeHostel=arr[5];
+		    String firstGraduate=arr[6];
+		    String managerApproval=arr[7];
+		    double[] costs=calculateTotalCollegeFee(preferCollegeHostel,firstGraduate,departmentName);
+		    double admissionFee=costs[0];
+		    double tuitionFee=costs[1];
+		    double hostelFee=costs[2];
+		    double totalCollegeFee=costs[3];
+		    String finalStatusOfAdmission="AdmissionSuccessfull";
+		    
+		   StudentAdmission sa=new StudentAdmission(admissionId,studentCode,dateOfCounseling,departmentName,dateOfAdmission,preferCollegeHostel,firstGraduate,managerApproval,admissionFee,tuitionFee,hostelFee,totalCollegeFee,finalStatusOfAdmission);
+		   studentAdmissionList.add(sa);
+		}
+		
+		return studentAdmissionList;
+	}
+----------------------------------------------------------
+since a variable "sa" is created but not added to the array list, another feedback error 
+
+Error Msg: Avoid unused local variables such as 'sa'.
+Variable Name: sa
+Priority: Medium
+Class Name: StudentAdmissionService
+
+*********	this could have been a clue to add that sa to the array list
+
+Another ISSUE:
+class: StudentAdmissionService
+method: calculateTotalCollegeFee
+problem:
+	totalCollegeFee is not calculated
+
+-----------------------------------------------------------
+2) use a "default" in the switch case 
+	switch (departmentName)
+		{
+		    case "EEE":
+		         tuitionFee=45000;
+		         break;
+		    case "ECE":
+		        tuitionFee=50000;
+		        break;
+		    case "CSE":
+		        tuitionFee=45000;
+		        break;
+		     case "MECH":
+		         tuitionFee=55000;
+		         break;
+		     case "CIVIL":
+		         tuitionFee=50000;
+		         break;
+		     case "IT":
+		         tuitionFee=45000;
+		         break;
+		   default:
+			break;
+		}
+
+----------------------------------------------------------------------
+
+Error Msg: Switch statements should have a default label
+Variable Name:
+Priority: Medium
+Class Name: StudentAdmissionService
+-----------------------------------------------------
+
+3) the hostel fees should be removed from the totalCollegeFee if "preferCollegeHostel" is not YES:
+	
+		totalCollegeFee=admissionFee+tuitionFee+hostelFee;
+						
+		if(!preferCollegeHostel.equals("YES"))
+		{
+			totalCollegeFee-=hostelFee;
+		      hostelFee=0;
+		}
+
+		 if(firstGraduate.equals("YES"))
+		 {
+		     totalCollegeFee-=20000;
+		 }
+		studentAdmissionCosts[0]=admissionFee;
+	    studentAdmissionCosts[1]=tuitionFee;
+	    studentAdmissionCosts[2]=hostelFee;
+	    studentAdmissionCosts[3]=totalCollegeFee;
+
+
+-------------------------------------------------------------
+Error:		String cannot be converted into Date
+
+4) Date date=null		INSTEAD OF 	new Date();
+
+	public static Date convertStringToDate(String inDate) {
+		
+		//Code here..
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = null;			//CHANGE FROM new Date()	TO null
+		try{
+		    date=sdf.parse(inDate);
+		}catch(ParseException e){
+		    //TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+		
+		return date;//TODO change this return value
+	}
+
+----------------------------------------------------------------------
+5) con is not closed
+	try catch is inside a loop. so cannot close the con within the loop.
+	after the loop
+		con.close();
+	this close method throws SQL Exception
+	so surround it with try and catch 
+
+-----------------------------------------------------------------------------------
+6) 
+Error Msg: getInstance method always creates a new object 
+and hence does not comply to Singleton Design Pattern behaviour. Please review
+Variable Name:
+Priority: High
+Class Name: DBConnectionManager
+
+Singleton pattern should allow only 1 instance available.
+make the class DBCon..Manger as final class
+i) create a private constructor		(to prevent new objects being created)
+ii) create a static instance in the class itself
+iii) getInstance method should check if that static instance is null or not
+	if(instance==null)
+	{
+		instance=new DBConnectionManager();
+	}
+	return instance;
+-----------------------------------------------------------------
+7)
+
+Error Msg: When instantiating a SimpleDateFormat object, specify a Locale
+Variable Name:
+Priority: Medium
+Class Name: ApplicationUtil
+
+
+SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");	//old
+
+import java.util.Locale;
+SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);	//new
+
+--------------------------------------------------------------------
+8)
+
+Error Msg: All methods are static.  Consider using a utility class instead. Alternatively, you could add a private constructor or make the class abstract to silence this warning.
+Variable Name:
+Priority: Medium
+Class Name: MainApp
+
+
+public final class MainApp {
+    private MainApp(){}
+	public static void main(String[] args) {
+
+------------------------------------------------------------------
+9)
+Error Msg: Ensure that resources like this Connection object are closed after use
+Variable Name: con
+Priority: Medium
+Class Name: StudentAdmissionDAO
+
+Error Msg: Ensure that resources like this ResultSet object are closed after use
+Variable Name: rs
+Priority: Medium
+Class Name: StudentAdmissionDAO
+
+SOLUTION:
+---------
+
+create objects inside try method	(NOT TRY BLOCK)
+public List<StudentAdmission> getAllStudentAdmissionDetails() throws StudentAdmissionException {
+		
+		List<StudentAdmission> stdAdmissions = new ArrayList<StudentAdmission>();
+
+		//code here
+		//Retrieval of all records from database
+		String query = "select * from UNO_ADMISSION";
+		try(Connection con = DBConnectionManager.getInstance().getConnection();
+		Statement st = con.createStatement();
+		ResultSet rs = st.executeQuery(query);){
+		    while(rs.next())
+		    {
+		        //storing retrieved records in object
+		        StudentAdmission obj = new StudentAdmission();
+		        obj.setAdmissionId(rs.getString(1));
+    		    obj.setStudentCode(rs.getString(2));
+    		    obj.setDateOfCounseling(new java.util.Date(rs.getDate(3).getTime()));
+    		    obj.setDepartmentName(rs.getString(4));
+    		    obj.setDateOfAdmission(new java.util.Date(rs.getDate(5).getTime()));
+    		    obj.setPreferCollegeHostel(rs.getString(6));
+    		    obj.setFirstGraduate(rs.getString(7));
+    		    obj.setManagerApproval(rs.getString(8));
+    		    obj.setAdmissionFee(rs.getDouble(9));
+    		    obj.setTuitionFee(rs.getDouble(10));
+    		    obj.setHostelFee(rs.getDouble(11));
+    		    obj.setTotalCollegeFee(rs.getDouble(12));
+    		    obj.setFinalStatusOfAdmission(rs.getString(13));
+    		    //adding StudentAdmission object into arraylist
+    		    stdAdmissions.add(obj);
+		    }
+		    
+		}catch(Exception e)
+		{
+		    e.printStackTrace();
+		    //throw new StudentAdmissionException("Database Value Retrieval Failed", e.getCause());
+		}
+		
+		return stdAdmissions;
+
+	}
+
+------------------------------
+10)
+
+Error Msg: Position literals first in String comparisons
+Variable Name:
+Priority: Medium
+Class Name: StudentAdmissionService
+
+SOLUTION:
+---------
+		if("YES".equals(preferCollegeHostel))
+		{
+		        studentAdmissionCosts[2]=75000;
+		}
+
+---------------------------------------------------
+11)
+Error Msg: Consider simply returning the value vs storing it in local variable 'status'
+Variable Name:
+Priority: Medium
+Class Name: StudentAdmissionService
+
+SOLUTION:
+---------	in service class:
+
+	public boolean searchStudentAdmission(String admissionId) throws StudentAdmissionException {
+//		boolean status = false;
+		
+		//Code here..
+		StudentAdmissionDAO stdDao = new StudentAdmissionDAO();
+		List<StudentAdmission> stdAdmissions = stdDao.getAllStudentAdmissionDetails();
+		for(StudentAdmission e:stdAdmissions) {
+		    if(e.getAdmissionId().equals(admissionId)) {
+		        System.out.println(e);
+/*		        status=true;
+			break;			*/
+			return true;
+		    }
+		}
+		return false;
+	}
+------------------------------------------------------------
+12) 
+Error Msg: All methods are static.  Consider using a utility class instead. Alternatively, you could add a private constructor or make the class abstract to silence this warning.
+Variable Name:
+Priority: Medium
+Class Name: ApplicationUtil
+
+SOLUTION:
+---------	CHANGE the class as final class and add a private constructor
+
+public final class ApplicationUtil {
+
+	/**
+	 * @param fileName
+	 * @return List<String>
+	 * @throws StudentAdmissionException
+	 */
+	 
+	 private ApplicationUtil(){}
+
+---------------------------------------------------
+13) 
+
+Error Msg: New exception is thrown in catch block, original stack trace may be lost
+Variable Name:
+Priority: Medium
+Class Name: DBConnectionManager
+
+
+**************Change this*************************	(COMMENT OUT throw inside catch and use ex.stacktrace only)
+
+	private DBConnectionManager() throws StudentAdmissionException {
+		loadProperties();
+		try {
+			Class.forName(props.getProperty(DRIVER));
+			this.connection = DriverManager.getConnection(props.getProperty(URL), props.getProperty(USER_NAME), 
+					props.getProperty(PASSWORD));
+		} catch (ClassNotFoundException ex) {	 	  	  			  	  	     	 			
+			throw new StudentAdmissionException("Could not find Driver class ", ex.getCause());
+		} catch (SQLException e) {
+			throw new StudentAdmissionException("Database Connection Creation Failed", e.getCause());
+		}
+	}
+***********************INTO************************
+private DBConnectionManager() throws StudentAdmissionException {
+		loadProperties();
+		try {
+			Class.forName(props.getProperty(DRIVER));
+			connection = DriverManager.getConnection(props.getProperty(URL), props.getProperty(USER_NAME), 
+					props.getProperty(PASSWORD));
+		} catch (ClassNotFoundException ex) {	 	 
+		    ex.printStackTrace();
+			//throw new StudentAdmissionException("Could not find Driver class ", ex.getCause());
+		} catch (SQLException e) {
+		    e.printStackTrace();
+			//throw new StudentAdmissionException("Database Connection Creation Failed", e.getCause());
+		}
+		catch(Exception e)
+		{
+		    e.printStackTrace();
+		    //throw new StudentAdmissionException("Database Connection Creation Failed", e.getCause());
+		}
+	}
+------------------------------------
